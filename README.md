@@ -21,3 +21,13 @@ Nesta etapa não existe banco de dados nem API. O armazenamento fica local para 
 
 ## Referência
 A organização foi inspirada nas funcionalidades públicas do Drivvo: abastecimentos, consumo, despesas, serviços/manutenções, lembretes e relatórios.
+
+
+## Alterações — 01/10/2026
+- Corrigida a estrutura da aplicação para separar as áreas em páginas HTML independentes.
+- A página inicial passou a abrir diretamente no cadastro de novo abastecimento.
+- Criadas páginas independentes para Manutenção, Despesas, Histórico e Cadastro da moto.
+- Criada folha de estilos compartilhada (style.css) para manter o visual clean e consistente.
+- Criado JavaScript compartilhado (app.js) para centralizar o armazenamento local e os cálculos.
+- A navegação entre os assuntos agora fecha a tela atual e abre a página correspondente.
+- Mantido o armazenamento local nesta fase, sem banco de dados.
