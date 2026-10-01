@@ -40,3 +40,8 @@ A organização foi inspirada nas funcionalidades públicas do Drivvo: abastecim
 - Manutenção e despesas possuem cadastro e exclusão funcionando.
 - O histórico reúne abastecimentos, manutenções e despesas em uma única tela com busca.
 - A navegação foi alterada para links entre páginas HTML independentes, em vez de abas dentro de um único cartão.
+
+## Alterações — 01/10/2026 — abastecimento
+- Campos de quilometragem, valor abastecido e preço por litro configurados para teclado numérico em dispositivos móveis.
+- O formulário de novo abastecimento passa a preencher automaticamente os dados do último abastecimento: quilometragem, valor, preço por litro, combustível, posto e observações.
+- A data continua sendo preenchida automaticamente com a data atual e não é herdada do abastecimento anterior.
