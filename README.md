@@ -31,3 +31,12 @@ A organização foi inspirada nas funcionalidades públicas do Drivvo: abastecim
 - Criado JavaScript compartilhado (app.js) para centralizar o armazenamento local e os cálculos.
 - A navegação entre os assuntos agora fecha a tela atual e abre a página correspondente.
 - Mantido o armazenamento local nesta fase, sem banco de dados.
+
+## Alterações — 01/10/2026 — versão multipágina funcional
+- Publicados os arquivos `style.css`, `app.js`, `manutencao.html`, `despesas.html`, `moto.html` e `historico.html`.
+- A página `index.html` agora inicia diretamente no lançamento de abastecimento.
+- Os formulários gravam os dados no `localStorage` compartilhado entre todas as páginas.
+- O abastecimento calcula automaticamente litros, distância desde o abastecimento anterior e consumo em km/L.
+- Manutenção e despesas possuem cadastro e exclusão funcionando.
+- O histórico reúne abastecimentos, manutenções e despesas em uma única tela com busca.
+- A navegação foi alterada para links entre páginas HTML independentes, em vez de abas dentro de um único cartão.
