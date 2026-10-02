@@ -7,7 +7,7 @@ function money(n){return Number(n||0).toLocaleString("pt-BR",{style:"currency",c
 function dateBR(s){return s?new Date(s+"T12:00:00").toLocaleDateString("pt-BR"):"—"}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function currentKm(){return Math.max(db.vehicle?.ikm||0,...db.fuel.map(x=>+x.km||0),...db.maint.map(x=>+x.km||0),...db.exp.map(x=>+x.km||0))}
-function toast(s){const x=document.getElementById("toast");if(!x)return;x.textContent=s;x.classList.add("show");setTimeout(()=>x.classList.remove("show"),1600)}
+function toast(s){const x=document.getElementById("toast");if(!x)return;x.textContent=s;x.classList.add("show");setTimeout(()=>x.classList.remove("show"),7000)}
 function nav(active){document.querySelectorAll(".nav a").forEach(a=>a.classList.toggle("on",a.dataset.p===active))}
 function fuelFromApi(x){return{id:x.id,date:x.entry_date,km:+x.km,total:+x.total_amount,pl:+x.price_per_liter,liters:+x.liters,type:x.fuel_type||"",station:x.station||"",notes:x.notes||"",distance:x.distance_km==null?null:+x.distance_km,consumption:x.consumption_km_l==null?null:+x.consumption_km_l}}
 function maintFromApi(x){return{id:x.id,date:x.entry_date,km:+x.km,item:x.item,price:+x.price,type:x.maintenance_type||"",store:x.store||"",phone:x.phone||"",nextKm:x.next_km==null?null:+x.next_km,nextDate:x.next_date||"",notes:x.notes||""}}
