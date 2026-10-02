@@ -1,10 +1,10 @@
 const KEY="moto_v2";
 const API="https://br-noisy-resonance-b594p7s8-api.compute.c-7.us-east-2.aws.neon.tech";
 const empty={vehicle:null,fuel:[],maint:[],exp:[]};
-let db;
-try{db=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem("moto_v1"))||empty}catch(e){db=empty}
-db.vehicle??=null;db.fuel??=[];db.maint??=[];db.exp??=[];
-function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+let db={vehicle:null,fuel:[],maint:[],exp:[]};
+let legacy=empty;
+try{legacy=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem("moto_v1"))||empty}catch(e){}
+function save(){}
 function today(){return new Date().toISOString().slice(0,10)}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
 function money(n){return Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
@@ -23,27 +23,21 @@ async function migrateLocal(local){
   for(const x of local.fuel){const r=await api("fuel",{method:"POST",body:JSON.stringify(x)});db.fuel.push(fuelFromApi(r))}
   for(const x of local.maint){const r=await api("maintenance",{method:"POST",body:JSON.stringify(x)});db.maint.push(maintFromApi(r))}
   for(const x of local.exp){const r=await api("expense",{method:"POST",body:JSON.stringify(x)});db.exp.push(expFromApi(r))}
-  save()
 }
 async function loadRemote(){
   try{
     const remote=await api("bootstrap");
     const hasRemote=!!remote.vehicle||remote.fuel.length||remote.maint.length||remote.exp.length;
-    const hasLocal=!!db.vehicle||db.fuel.length||db.maint.length||db.exp.length;
-    if(!hasRemote&&hasLocal){
-      const local={vehicle:db.vehicle,fuel:[...db.fuel],maint:[...db.maint],exp:[...db.exp]};
-      db={vehicle:null,fuel:[],maint:[],exp:[]};
-      await migrateLocal(local);
-    }else{
-      db={vehicle:vehicleFromApi(remote.vehicle),fuel:remote.fuel.map(fuelFromApi),maint:remote.maint.map(maintFromApi),exp:remote.exp.map(expFromApi)};
-      save();
-    }
+    const hasLegacy=!!legacy.vehicle||legacy.fuel.length||legacy.maint.length||legacy.exp.length;
+    if(!hasRemote&&hasLegacy){db={vehicle:null,fuel:[],maint:[],exp:[]};await migrateLocal(legacy)}
+    else db={vehicle:vehicleFromApi(remote.vehicle),fuel:remote.fuel.map(fuelFromApi),maint:remote.maint.map(maintFromApi),exp:remote.exp.map(expFromApi)};
+    localStorage.removeItem(KEY);localStorage.removeItem("moto_v1");
     window.dispatchEvent(new CustomEvent("moto:ready"));return true
   }catch(e){console.error("Neon:",e);window.dispatchEvent(new CustomEvent("moto:error",{detail:e}));return false}
 }
-async function saveVehicle(v){const r=await api("vehicle",{method:"POST",body:JSON.stringify(v)});db.vehicle=vehicleFromApi(r);save()}
-async function createFuel(v){const r=await api("fuel",{method:"POST",body:JSON.stringify(v)});const x=fuelFromApi(r);db.fuel.push(x);db.fuel.sort((a,b)=>a.km-b.km);save();return x}
-async function createMaintenance(v){const r=await api("maintenance",{method:"POST",body:JSON.stringify(v)});const x=maintFromApi(r);db.maint.push(x);db.maint.sort((a,b)=>a.km-b.km);save();return x}
-async function createExpense(v){const r=await api("expense",{method:"POST",body:JSON.stringify(v)});const x=expFromApi(r);db.exp.push(x);save();return x}
-async function del(type,id){if(!confirm("Excluir este registro?"))return;const endpoint=type==="fuel"?"fuel":type==="maint"?"maintenance":"expense";try{await api(endpoint+"/"+encodeURIComponent(id),{method:"DELETE"});db[type]=db[type].filter(x=>x.id!==id);save();location.reload()}catch(e){toast("Não foi possível excluir")}}
+async function saveVehicle(v){const r=await api("vehicle",{method:"POST",body:JSON.stringify(v)});db.vehicle=vehicleFromApi(r)}
+async function createFuel(v){const r=await api("fuel",{method:"POST",body:JSON.stringify(v)});const x=fuelFromApi(r);db.fuel.push(x);db.fuel.sort((a,b)=>a.km-b.km);return x}
+async function createMaintenance(v){const r=await api("maintenance",{method:"POST",body:JSON.stringify(v)});const x=maintFromApi(r);db.maint.push(x);db.maint.sort((a,b)=>a.km-b.km);return x}
+async function createExpense(v){const r=await api("expense",{method:"POST",body:JSON.stringify(v)});const x=expFromApi(r);db.exp.push(x);return x}
+async function del(type,id){if(!confirm("Excluir este registro?"))return;const endpoint=type==="fuel"?"fuel":type==="maint"?"maintenance":"expense";try{await api(endpoint+"/"+encodeURIComponent(id),{method:"DELETE"});db[type]=db[type].filter(x=>x.id!==id);location.reload()}catch(e){toast("Não foi possível excluir")}}
 loadRemote();
