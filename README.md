@@ -15,7 +15,7 @@ Aplicação mobile-first para acompanhar os custos e o histórico de uma moto.
 
 ## Persistência no Neon
 
-Os dados da aplicação são persistidos no PostgreSQL do Neon, no projeto `sparkling-sea-76150935`, branch `production`.
+Os dados são persistidos no PostgreSQL do Neon, no projeto `sparkling-sea-76150935`, branch `production`.
 
 Tabelas:
 - `public.moto_vehicle`
@@ -23,19 +23,15 @@ Tabelas:
 - `public.moto_maintenance`
 - `public.moto_expense`
 
-A aplicação pública no GitHub Pages chama uma Neon Function HTTP em:
-`/health`, `/bootstrap`, `/vehicle`, `/fuel`, `/maintenance` e `/expense`.
+A aplicação no GitHub Pages usa a Neon Data API como camada HTTP de persistência. O banco Neon é a fonte de verdade; novos lançamentos não são gravados no navegador. Existe somente uma migração automática de dados antigos da versão anterior que ainda estejam no navegador.
 
-A Function usa `DATABASE_URL` injetada pelo Neon e `pg` com pool compartilhado. O navegador não grava novos registros em `localStorage`; o banco Neon é a fonte de verdade. Existe apenas uma migração automática de dados antigos da versão anterior que ainda estejam no navegador.
-
-## Arquivos Neon
-- `neon.ts`: configuração do projeto/Function.
-- `src/index.ts`: API da Function.
+## Neon
+- Projeto: `sparkling-sea-76150935`
+- Branch: `production`
+- Branch ID: `br-noisy-resonance-b594p7s8`
+- Data API: `https://ep-holy-sky-b5qingk3.apirest.c-7.us-east-2.aws.neon.tech/neondb/rest/v1`
+- `neon.ts`: configuração do Neon Auth.
 - `sql/001_moto.sql`: schema e índices do banco.
 
-## Deploy
-Projeto Neon: `sparkling-sea-76150935`
-Branch: `production`
-Branch ID: `br-noisy-resonance-b594p7s8`
-Function: `api`
-Runtime: Node.js 24
+A região `aws-us-east-2` atende ao requisito regional do Neon Functions, mas a implantação da Function foi diagnosticada como incompatível com o bundle enviado; para a aplicação estática, a Data API fornece diretamente os endpoints HTTP necessários e evita credenciais de banco no frontend.
+
