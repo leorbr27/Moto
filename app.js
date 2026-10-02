@@ -20,7 +20,7 @@ function vehicleFromApi(x){return x?{brand:x.brand,model:x.model,yf:+x.year_fabr
 async function api(path,options={}){const r=await fetch(API+"/"+path,{headers:{"Content-Type":"application/json",...(options.headers||{})},...options});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"Falha na API");return data}
 async function migrateLocal(local){
   if(local.vehicle){const r=await api("vehicle",{method:"POST",body:JSON.stringify(local.vehicle)});db.vehicle=vehicleFromApi(r)}
-  for(const x of local.fuel){const r=await api("fuel",{method:"POST",body:JSON.stringify(x));db.fuel.push(fuelFromApi(r))}
+  for(const x of local.fuel){const r=await api("fuel",{method:"POST",body:JSON.stringify(x)});db.fuel.push(fuelFromApi(r))}
   for(const x of local.maint){const r=await api("maintenance",{method:"POST",body:JSON.stringify(x)});db.maint.push(maintFromApi(r))}
   for(const x of local.exp){const r=await api("expense",{method:"POST",body:JSON.stringify(x)});db.exp.push(expFromApi(r))}
   save()
