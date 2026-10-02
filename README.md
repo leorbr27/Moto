@@ -1,47 +1,41 @@
 # Moto — Controle de gastos da moto
 
-Aplicação mobile-first para acompanhar os custos e o histórico de uma moto, inspirada nos recursos do Drivvo.
+Aplicação mobile-first para acompanhar os custos e o histórico de uma moto.
 
-## Recursos da primeira versão
+## Recursos
 - Cadastro da moto: marca, modelo, ano de fabricação, ano do modelo, placa e KM inicial.
 - Abastecimentos: data, KM, valor total, preço/litro, tipo de combustível, posto e observações.
-- Cálculo automático dos litros abastecidos.
-- Cálculo automático da distância desde o abastecimento anterior e do consumo em km/L.
-- Manutenções: data, KM, peça/serviço, preço, tipo, loja/oficina, telefone, próxima troca por KM, próxima troca por data e observações.
+- Cálculo automático dos litros, distância e consumo em km/L.
+- Preenchimento automático dos dados do último abastecimento.
+- Manutenções: data, KM, peça/serviço, preço, tipo, loja/oficina, telefone, próxima troca por KM/data e observações.
 - Despesas gerais: IPVA, seguro, lavagem, estacionamento, pedágio, acessórios, documentação, multa e outros.
-- Resumo mensal.
-- Aviso de manutenção próxima por quilometragem.
-- Histórico geral com busca e filtro.
-- Edição e exclusão de registros.
-- Backup local em JSON.
-- Dados armazenados localmente no navegador via localStorage.
+- Histórico geral com busca.
+- Exclusão de registros.
+- Interface mobile-first.
 
-## Arquitetura
-Nesta etapa não existe banco de dados nem API. O armazenamento fica local para facilitar o uso offline. A estrutura de dados foi mantida separada das telas para que a próxima etapa possa migrar para Neon/Postgres sem mudar a experiência do usuário.
+## Persistência no Neon
 
-## Referência
-A organização foi inspirada nas funcionalidades públicas do Drivvo: abastecimentos, consumo, despesas, serviços/manutenções, lembretes e relatórios.
+Os dados da aplicação são persistidos no PostgreSQL do Neon, no projeto `sparkling-sea-76150935`, branch `production`.
 
+Tabelas:
+- `public.moto_vehicle`
+- `public.moto_fuel`
+- `public.moto_maintenance`
+- `public.moto_expense`
 
-## Alterações — 01/10/2026
-- Corrigida a estrutura da aplicação para separar as áreas em páginas HTML independentes.
-- A página inicial passou a abrir diretamente no cadastro de novo abastecimento.
-- Criadas páginas independentes para Manutenção, Despesas, Histórico e Cadastro da moto.
-- Criada folha de estilos compartilhada (style.css) para manter o visual clean e consistente.
-- Criado JavaScript compartilhado (app.js) para centralizar o armazenamento local e os cálculos.
-- A navegação entre os assuntos agora fecha a tela atual e abre a página correspondente.
-- Mantido o armazenamento local nesta fase, sem banco de dados.
+A aplicação pública no GitHub Pages chama uma Neon Function HTTP em:
+`/health`, `/bootstrap`, `/vehicle`, `/fuel`, `/maintenance` e `/expense`.
 
-## Alterações — 01/10/2026 — versão multipágina funcional
-- Publicados os arquivos `style.css`, `app.js`, `manutencao.html`, `despesas.html`, `moto.html` e `historico.html`.
-- A página `index.html` agora inicia diretamente no lançamento de abastecimento.
-- Os formulários gravam os dados no `localStorage` compartilhado entre todas as páginas.
-- O abastecimento calcula automaticamente litros, distância desde o abastecimento anterior e consumo em km/L.
-- Manutenção e despesas possuem cadastro e exclusão funcionando.
-- O histórico reúne abastecimentos, manutenções e despesas em uma única tela com busca.
-- A navegação foi alterada para links entre páginas HTML independentes, em vez de abas dentro de um único cartão.
+A Function usa `DATABASE_URL` injetada pelo Neon e `pg` com pool compartilhado. O navegador não grava novos registros em `localStorage`; o banco Neon é a fonte de verdade. Existe apenas uma migração automática de dados antigos da versão anterior que ainda estejam no navegador.
 
-## Alterações — 01/10/2026 — abastecimento
-- Campos de quilometragem, valor abastecido e preço por litro configurados para teclado numérico em dispositivos móveis.
-- O formulário de novo abastecimento passa a preencher automaticamente os dados do último abastecimento: quilometragem, valor, preço por litro, combustível, posto e observações.
-- A data continua sendo preenchida automaticamente com a data atual e não é herdada do abastecimento anterior.
+## Arquivos Neon
+- `neon.ts`: configuração do projeto/Function.
+- `src/index.ts`: API da Function.
+- `sql/001_moto.sql`: schema e índices do banco.
+
+## Deploy
+Projeto Neon: `sparkling-sea-76150935`
+Branch: `production`
+Branch ID: `br-noisy-resonance-b594p7s8`
+Function: `api`
+Runtime: Node.js 24
