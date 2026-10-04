@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Entrar — Controle da Moto</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+<header class="top">
+  <div class="ey">CONTROLE DA MOTO</div>
+  <h1>🔐 Entrar</h1>
+  <p>Acesso aos dados armazenados no Neon</p>
+</header>
+<main class="auth-main">
+  <section class="card auth-card">
+    <div id="authStatus" class="status info">Verificando sua sessão…</div>
+    <div id="loginArea" hidden>
+      <h2>Acesso seguro</h2>
+      <p class="auth-copy">Entre com sua conta do GitHub para acessar os abastecimentos já gravados no Neon.</p>
+      <button id="githubBtn" class="btn github" type="button">🐙 Entrar com GitHub</button>
+      <p class="auth-note">A autenticação é processada pelo Neon Auth. Nenhuma senha ou segredo do GitHub fica nesta página.</p>
+    </div>
+    <div id="sessionArea" hidden>
+      <h2>Você já está autenticado.</h2>
+      <p id="userInfo" class="auth-copy"></p>
+      <div class="form-actions">
+        <a href="index.html" class="btn primary">🏍️ Abrir controle</a>
+        <button id="logoutBtn" class="btn secondary" type="button">Sair</button>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>Autenticação: Neon Auth · Dados: Neon PostgreSQL</footer>
+<script>
+const AUTH="https://ep-holy-sky-b5qingk3.neonauth.c-7.us-east-2.aws.neon.tech/neondb/auth";
+let client=null;
+const $=s=>document.querySelector(s);
+async function getClient(){
+  if(client)return client;
+  const mod=await import("https://esm.sh/@neondatabase/neon-js@latest");
+  client=mod.createClient({auth:{adapter:mod.BetterAuthVanillaAdapter(),url:AUTH}});
+  return client;
+}
+function status(msg,type="info"){
+  const el=$("#authStatus");el.hidden=false;el.className="status "+type;el.textContent=msg;
+}
+async function init(){
+  try{
+    const c=await getClient();
+    const session=await c.auth.getSession();
+    if(session?.data?.session){
+      const u=session.data.user||{};
+      $("#userInfo").textContent=u.name||u.email||"Sessão autenticada pelo Neon.";
+      $("#sessionArea").hidden=false;
+      status("Sessão ativa.","info");
+      return;
+    }
+    $("#loginArea").hidden=false;
+    status("Faça login para continuar.","info");
+  }catch(e){
+    console.error(e);
+    $("#loginArea").hidden=false;
+    status("Não foi possível conectar ao Neon Auth. Verifique a configuração do Neon.","error");
+  }
+}
+$("#githubBtn").onclick=async()=>{
+  const b=$("#githubBtn");b.disabled=true;b.textContent="Conectando…";
+  try{
+    const c=await getClient();
+    await c.auth.signIn.social({
+      provider:"github",
+      callbackURL:new URL("index.html",location.href).href
+    });
+  }catch(e){
+    console.error(e);
+    status("Não foi possível iniciar o login com GitHub. Confirme se o provedor GitHub está habilitado no Neon Auth.","error");
+    b.disabled=false;b.textContent="🐙 Entrar com GitHub";
+  }
+};
+$("#logoutBtn").onclick=async()=>{
+  try{const c=await getClient();await c.auth.signOut();location.reload()}
+  catch(e){console.error(e);status("Não foi possível sair da sessão.","error")}
+};
+init();
+</script>
+</body>
+</html>
