@@ -1,5 +1,5 @@
 const API="https://ep-holy-sky-b5qingk3.apirest.c-7.us-east-2.aws.neon.tech/neondb/rest/v1";
-const AUTH="https://ep-holy-sky-b5qingk3.neonauth.c-7.us-east-2.aws.neon.tech/neondb/auth";
+const AUTH="https://ep-jolly-bonus-b4gg5qtb.neonauth.c-6.us-east-2.aws.neon.tech/neondb/auth";
 let client=null, records=[], editingId=null, busy=false;
 
 const $=s=>document.querySelector(s);
