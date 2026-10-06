@@ -35,7 +35,9 @@ A tela principal permite:
 - combustível;
 - posto;
 - observações;
-- preenchimento automático de combustível, posto, preço e observações do último abastecimento;
+- data do novo abastecimento pré-preenchida com a data atual;
+- preenchimento automático de quilometragem, valor abastecido, preço por litro, combustível, posto e observações do último abastecimento;
+- recálculo imediato dos litros ao alterar valor abastecido ou preço por litro;
 - edição e exclusão;
 - histórico do mais recente para o mais antigo;
 - consumo médio e custo médio por km.
@@ -92,11 +94,13 @@ Após alterações, validar:
 7. INSERT;
 8. UPDATE;
 9. DELETE;
-10. cálculo de litros;
-11. cálculo de consumo;
-12. atualização sem recarregamento manual;
-13. preenchimento automático;
-14. teclado numérico no celular;
+10. cálculo automático e imediato de litros;
+11. data atual pré-preenchida em novo abastecimento;
+12. cópia dos dados do último abastecimento para um novo registro;
+13. cálculo de consumo;
+14. atualização sem recarregamento manual;
+15. preenchimento automático;
+16. teclado numérico no celular;
 15. data da última alteração registrada no GitHub.
 
-Última atualização documentada: 04/10/2026.
+Última atualização documentada: 06/10/2026.
