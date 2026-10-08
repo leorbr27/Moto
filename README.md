@@ -11,17 +11,7 @@ Aplicativo mobile-first para registrar abastecimentos e acompanhar o consumo da 
 - A interface publicada no GitHub Pages usa a Neon Data API.
 - Nenhuma `DATABASE_URL`, senha ou credencial privada é colocada no frontend.
 - `localStorage` não é usado como banco de dados.
-- A autenticação usa Neon Auth, integrada ao mesmo projeto Neon.
-
-## Acesso e autenticação
-
-- `index.html` exige uma sessão autenticada do Neon Auth.
-- O botão **Entrar** abre `auth.html`.
-- `auth.html` usa Neon Auth/Better Auth para iniciar o login social com GitHub.
-- Após o login, o usuário retorna para `index.html`.
-- A sessão é mantida pelo Neon Auth; o frontend não armazena senha nem segredo OAuth.
-- O provedor GitHub precisa estar habilitado/configurado no Neon Auth para o login social funcionar.
-- O endereço publicado do GitHub Pages precisa estar configurado como origem confiável no Neon Auth.
+- **Não há autenticação, login ou senha.** O sistema funciona diretamente como acesso anônimo.
 
 ## Abastecimentos
 
@@ -42,13 +32,19 @@ A tela principal permite:
 - histórico do mais recente para o mais antigo;
 - consumo médio e custo médio por km.
 
+## Acesso aos dados
+
+A Neon Data API está configurada para usar a role anônima do banco. A tabela `public.abastecimentos` possui política RLS para permitir CRUD ao role `anonymous`.
+
+A aplicação faz chamadas HTTP diretamente à Data API, sem token JWT, sessão, OAuth ou SDK de autenticação.
+
 ## Última atualização
 
-O rodapé da tela principal não usa mais a data/hora local para representar a atualização. Ele consulta o commit mais recente da branch `main` do GitHub e mostra a data/hora desse commit no horário de Brasília.
+O rodapé da tela principal consulta o commit mais recente da branch `main` do GitHub e mostra a data/hora desse commit no horário de Brasília.
 
 ## API
 
-A camada HTTP é a Neon Data API, com a tabela `abastecimentos` exposta no endpoint REST do banco. A aplicação usa os métodos HTTP correspondentes:
+A camada HTTP é a Neon Data API, com a tabela `abastecimentos` exposta no endpoint REST do banco. A aplicação usa:
 
 - GET para leitura;
 - POST para cadastro;
@@ -83,24 +79,20 @@ O consumo médio exibido é a distância total válida dividida pelos litros dos
 
 ## Diagnóstico
 
-Após alterações, validar:
+Após a remoção da autenticação, validar:
 
 1. carregamento da página;
-2. existência de sessão Neon Auth;
-3. redirecionamento para `auth.html` quando não autenticado;
-4. login social com GitHub;
-5. retorno para `index.html`;
-6. GET;
-7. INSERT;
-8. UPDATE;
-9. DELETE;
-10. cálculo automático e imediato de litros;
-11. data atual pré-preenchida em novo abastecimento;
-12. cópia dos dados do último abastecimento para um novo registro;
-13. cálculo de consumo;
-14. atualização sem recarregamento manual;
-15. preenchimento automático;
-16. teclado numérico no celular;
-15. data da última alteração registrada no GitHub.
+2. acesso direto sem login;
+3. GET;
+4. INSERT;
+5. UPDATE;
+6. DELETE;
+7. cálculo automático e imediato de litros;
+8. data atual pré-preenchida em novo abastecimento;
+9. cópia dos dados do último abastecimento para um novo registro;
+10. cálculo de consumo;
+11. atualização sem recarregamento manual;
+12. teclado numérico no celular;
+13. data da última alteração registrada no GitHub.
 
-Última atualização documentada: 06/10/2026.
+Última atualização documentada: 08/10/2026.
