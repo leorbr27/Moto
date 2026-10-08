@@ -14,7 +14,7 @@ function toast(msg){const x=$("#toast");x.textContent=msg;x.classList.add("show"
 function setStatus(msg,type="info"){if(!msg){statusEl.hidden=true;return}statusEl.hidden=false;statusEl.className="status "+type;statusEl.textContent=msg}
 function showError(msg){console.error(msg);setStatus(msg,"error");toast(msg)}
 
-async function api(path,options={}){const r=await fetch(API+"/"+path,{...options,headers:{Accept:"application/json","Content-Type":"application/json",...(options.headers||{})}});const raw=await r.text();let data=[];try{data=raw?JSON.parse(raw):[]}catch{}if(!r.ok){const detail=data?.message||data?.error||raw||r.statusText;throw new Error("Neon "+r.status+": "+detail)}return data}
+async function api(path,options={}){const headers={Accept:"application/json",...(options.headers||{})};if(options.body)headers["Content-Type"]="application/json";const r=await fetch(API+"/"+path,{...options,headers});const raw=await r.text();let data=[];try{data=raw?JSON.parse(raw):[]}catch{}if(!r.ok){const detail=data?.message||data?.error||raw||r.statusText;throw new Error("Neon "+r.status+": "+detail)}return data}
 
 async function load(){setStatus("Consultando os abastecimentos no Neon…");try{records=await api("abastecimentos?select=*&order=data_abastecimento.desc,created_at.desc");records=records.map(normalize);render();setUpdated();setStatus("");}catch(e){const detail=e?.message||String(e);showError("Erro real do Neon ao carregar os dados: "+detail);console.error("Diagnóstico Neon:",e)}}
 function normalize(x){return{...x,km:Number(x.quilometragem),liters:Number(x.litros),total:Number(x.valor_total),price:Number(x.preco_litro)}}
