@@ -1,1 +1,1 @@
-{"type":"module","dependencies":{"@neondatabase/serverless":"^1.0.0"}}
+{"type":"module","dependencies":{"pg":"^8.16.3"}}
