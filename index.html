@@ -1,1 +1,210 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Controle da Moto</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="ey">CONTROLE DA MOTO</div>
+  <div class="top-row">
+    <div><h1>🏍️ Controle da Moto</h1><p>Abastecimentos e consumo</p></div>
+  </div>
+  <nav class="nav">
+    <a href="manutencao.html">🔧 Manutenção</a>
+    <a href="despesas.html">💰 Despesas</a>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="historico.html">📋 Histórico</a>
+  </nav>
+</header>
+<main>
+  <section id="status" class="status" hidden></section>
+  <section class="metrics" id="metrics"></section>
 
+  <section class="card">
+    <div class="section-head">
+      <div><span class="ey dark">ABASTECIMENTO</span><h2 id="formTitle">Novo abastecimento</h2></div>
+    </div>
+    <form id="fuelForm" class="form" novalidate>
+      <div class="grid two">
+        <label>Data<input name="date" type="date" required></label>
+        <label>Quilometragem (km)<input name="km" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" required></label>
+      </div>
+      <div class="grid two">
+        <label>Valor abastecido (R$)<input name="total" type="number" inputmode="decimal" min="0.01" step="0.01" required></label>
+        <label>Preço por litro (R$)<input name="price" type="number" inputmode="decimal" min="0.001" step="0.001" required></label>
+      </div>
+      <div class="grid two">
+        <label>Litros<input name="liters" type="number" inputmode="decimal" min="0.001" step="0.001" readonly></label>
+        <label>Combustível<select name="fuel" required><option>Gasolina comum</option><option>Gasolina aditivada</option><option>Etanol</option><option>Outro</option></select></label>
+      </div>
+      <label>Posto<input name="station" type="text" maxlength="120"></label>
+      <label>Observações<textarea name="notes" rows="3" maxlength="500"></textarea></label>
+      <div class="form-actions">
+        <button id="saveBtn" class="btn primary" type="submit">💾 Salvar abastecimento</button>
+        <button id="cancelBtn" class="btn secondary" type="button" hidden>Cancelar</button>
+      </div>
+    </form>
+  </section>
+
+  <section>
+    <div class="section-head list-head"><h2>Histórico de abastecimentos</h2><span id="countLabel"></span></div>
+    <div id="fuelList"></div>
+  </section>
+</main>
+<footer>Última atualização: <strong id="updatedAt">—</strong></footer>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const API = 'https://br-noisy-resonance-b594p7s8-motoapi.compute.c-7.us-east-2.aws.neon.tech';
+  const form = document.getElementById('fuelForm');
+  const list = document.getElementById('fuelList');
+  const status = document.getElementById('status');
+  const metrics = document.getElementById('metrics');
+  const toast = document.getElementById('toast');
+  const saveBtn = document.getElementById('saveBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const countLabel = document.getElementById('countLabel');
+  const updatedAt = document.getElementById('updatedAt');
+  let records = [];
+  let editingId = null;
+
+  const field = n => form.elements[n];
+  const today = () => new Date().toLocaleDateString('en-CA');
+
+  function showStatus(message, type='error') {
+    status.textContent = message;
+    status.className = 'status ' + type;
+    status.hidden = false;
+  }
+  function hideStatus(){ status.hidden = true; }
+  function money(v){ return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+  function num(v,d=2){ return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+  function dateBR(v){
+    if(!v) return '—';
+    const s=String(v).slice(0,10).split('-');
+    return s.length===3 ? s.reverse().join('/') : v;
+  }
+  function toastMsg(msg){
+    toast.textContent=msg; toast.classList.add('show');
+    clearTimeout(toastMsg.t); toastMsg.t=setTimeout(()=>toast.classList.remove('show'),2600);
+  }
+  function resetForm(){
+    editingId=null;
+    document.getElementById('formTitle').textContent='Novo abastecimento';
+    saveBtn.textContent='💾 Salvar abastecimento';
+    cancelBtn.hidden=true;
+    field('date').value=today();
+    field('liters').value='';
+    if(records.length){
+      const last=[...records].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')) || Number(b.km||0)-Number(a.km||0))[0];
+      field('km').value=last.km ?? '';
+      field('total').value=last.total ?? last.valor_abastecido ?? '';
+      field('price').value=last.price ?? last.preco_litro ?? '';
+      field('fuel').value=last.fuel ?? last.combustivel ?? 'Gasolina comum';
+      field('station').value=last.station ?? last.posto ?? '';
+      calculateLiters();
+    } else {
+      field('km').value=''; field('total').value=''; field('price').value='';
+      field('fuel').value='Gasolina comum'; field('station').value=''; field('notes').value='';
+    }
+  }
+  function calculateLiters(){
+    const total=parseFloat(field('total').value), price=parseFloat(field('price').value);
+    field('liters').value=(total>0 && price>0) ? (total/price).toFixed(3) : '';
+  }
+  function normalize(x){
+    return {
+      id:x.id ?? x.abastecimento_id ?? x.uuid,
+      date:x.date ?? x.data,
+      km:x.km ?? x.quilometragem,
+      total:x.total ?? x.valor_abastecido ?? x.valor,
+      price:x.price ?? x.preco_litro ?? x.preco,
+      liters:x.liters ?? x.litros,
+      fuel:x.fuel ?? x.combustivel,
+      station:x.station ?? x.posto,
+      notes:x.notes ?? x.observacoes ?? ''
+    };
+  }
+  async function api(path, options={}){
+    const r=await fetch(API+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
+    const text=await r.text();
+    let data; try{data=text?JSON.parse(text):null}catch{data=text}
+    if(!r.ok) throw new Error((data&&data.error)||data?.message||('HTTP '+r.status));
+    return data;
+  }
+  async function load(){
+    hideStatus();
+    try{
+      const data=await api('/abastecimentos');
+      records=(Array.isArray(data)?data:(data?.data||data?.abastecimentos||[])).map(normalize);
+      render();
+      resetForm();
+    }catch(e){
+      records=[];
+      render();
+      field('date').value=today();
+      showStatus('Erro real do Neon ao carregar os dados: '+e.message,'error');
+    }
+  }
+  function render(){
+    const sorted=[...records].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')) || Number(b.km||0)-Number(a.km||0));
+    countLabel.textContent=sorted.length+' registro'+(sorted.length===1?'':'s');
+    if(!sorted.length) list.innerHTML='<div class="empty">Nenhum abastecimento registrado.</div>';
+    else list.innerHTML=sorted.map((r,i)=>{
+      const prev=sorted[i+1];
+      const kmL=prev && Number(r.km)>Number(prev.km) && Number(r.liters)>0 ? ((Number(r.km)-Number(prev.km))/Number(r.liters)) : null;
+      return '<article class="fuel-item"><div class="fuel-main"><div><div class="fuel-date">'+dateBR(r.date)+'</div><div class="fuel-meta">'+num(r.km,0)+' km · '+num(r.liters,3)+' L · '+num(r.price,3)+' / L<br>'+escapeHtml(r.fuel||'')+(r.station?' · '+escapeHtml(r.station):'')+(kmL?' · '+num(kmL,2)+' km/L':'')+'</div></div><div class="fuel-total">'+money(r.total)+'</div></div><div class="fuel-actions"><button class="btn edit" data-edit="'+escapeAttr(r.id)+'">✏️ Editar</button><button class="btn danger" data-delete="'+escapeAttr(r.id)+'">🗑️ Excluir</button></div></article>';
+    }).join('');
+    const total=records.reduce((s,r)=>s+Number(r.total||0),0);
+    const liters=records.reduce((s,r)=>s+Number(r.liters||0),0);
+    const km=records.length>1 ? Math.max(...records.map(r=>Number(r.km||0)))-Math.min(...records.map(r=>Number(r.km||0))) : 0;
+    metrics.innerHTML='<div class="metric"><div class="label">ABASTECIMENTOS</div><div class="value">'+records.length+'</div></div><div class="metric"><div class="label">TOTAL GASTO</div><div class="value">'+money(total)+'</div></div><div class="metric"><div class="label">LITROS</div><div class="value">'+num(liters,2)+' L</div></div><div class="metric"><div class="label">DISTÂNCIA</div><div class="value">'+num(km,0)+' km</div></div>';
+    updatedAt.textContent=new Date().toLocaleString('pt-BR');
+  }
+  function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function escapeAttr(v){return escapeHtml(v).replace(/"/g,'&quot;');}
+  form.addEventListener('input',e=>{if(e.target.name==='total'||e.target.name==='price') calculateLiters();});
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const data={date:field('date').value,km:Number(field('km').value),total:Number(field('total').value),price:Number(field('price').value),liters:Number(field('liters').value),fuel:field('fuel').value,station:field('station').value.trim(),notes:field('notes').value.trim()};
+    if(!data.date||!Number.isFinite(data.km)||!data.total||!data.price){toastMsg('Preencha os campos obrigatórios.');return;}
+    saveBtn.disabled=true;
+    try{
+      if(editingId!=null) await api('/abastecimentos/'+encodeURIComponent(editingId),{method:'PATCH',body:JSON.stringify(data)});
+      else await api('/abastecimentos',{method:'POST',body:JSON.stringify(data)});
+      toastMsg(editingId!=null?'Abastecimento atualizado.':'Abastecimento salvo.');
+      await load();
+    }catch(e){showStatus('Erro real ao salvar o abastecimento: '+e.message,'error');}
+    finally{saveBtn.disabled=false;}
+  });
+  cancelBtn.addEventListener('click',resetForm);
+  list.addEventListener('click',async e=>{
+    const edit=e.target.closest('[data-edit]'), del=e.target.closest('[data-delete]');
+    if(edit){
+      const r=records.find(x=>String(x.id)===String(edit.dataset.edit)); if(!r)return;
+      editingId=r.id;
+      document.getElementById('formTitle').textContent='Editar abastecimento';
+      saveBtn.textContent='💾 Atualizar abastecimento'; cancelBtn.hidden=false;
+      field('date').value=String(r.date||'').slice(0,10); field('km').value=r.km??''; field('total').value=r.total??'';
+      field('price').value=r.price??''; field('liters').value=r.liters??''; field('fuel').value=r.fuel??'Gasolina comum';
+      field('station').value=r.station??''; field('notes').value=r.notes??''; calculateLiters();
+      scrollTo({top:0,behavior:'smooth'}); return;
+    }
+    if(del){
+      const id=del.dataset.delete;
+      if(!confirm('Excluir este abastecimento?'))return;
+      try{await api('/abastecimentos/'+encodeURIComponent(id),{method:'DELETE'});toastMsg('Abastecimento excluído.');await load();}
+      catch(e){showStatus('Erro real ao excluir o abastecimento: '+e.message,'error');}
+    }
+  });
+  field('date').value=today();
+  load();
+})();
+</script>
+</body>
+</html>
