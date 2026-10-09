@@ -172,7 +172,7 @@
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     const data={data_abastecimento:field('date').value,quilometragem:Number(field('km').value),valor_total:Number(field('total').value),preco_litro:Number(field('price').value),litros:Number(field('liters').value),combustivel:field('fuel').value,posto:field('station').value.trim(),observacoes:field('notes').value.trim()};
-    if(!data.date||!Number.isFinite(data.km)||!data.total||!data.price){toastMsg('Preencha os campos obrigatórios.');return;}
+    if(!data.data_abastecimento||!Number.isFinite(data.quilometragem)||!data.valor_total||!data.preco_litro){toastMsg('Preencha os campos obrigatórios.');return;}
     saveBtn.disabled=true;
     try{
       if(editingId!=null) await api('/abastecimentos/'+encodeURIComponent(editingId),{method:'PATCH',body:JSON.stringify(data)});
