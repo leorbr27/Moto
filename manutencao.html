@@ -1,1 +1,125 @@
-
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Manutenção da Moto</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.nav a{color:#e5e7eb;text-decoration:none;font-size:12px;font-weight:750;background:#ffffff12;border:1px solid #ffffff24;border-radius:10px;padding:9px 10px}.maintenance-item{background:#fff;border:1px solid #e5e7eb;border-radius:15px;padding:14px;margin-bottom:9px;box-shadow:0 3px 12px #00000006}.maintenance-main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px}.maintenance-title{font-weight:850}.maintenance-meta{color:#64748b;font-size:12px;line-height:1.6;margin-top:5px}.maintenance-price{text-align:right;font-size:17px;font-weight:900;white-space:nowrap}.maintenance-actions{display:flex;gap:7px;margin-top:10px}.maintenance-actions .btn{min-height:36px;padding:7px 10px;font-size:12px}.maintenance-actions .edit{background:#e0e7ff;color:#3730a3}.maintenance-actions .danger{background:#fee2e2;color:#991b1b}.next-due{display:inline-block;background:#dbeafe;color:#1e40af;border-radius:8px;padding:4px 7px;font-size:11px;font-weight:800;margin-top:7px}@media(max-width:560px){.maintenance-main{grid-template-columns:minmax(0,1fr) auto}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="ey">CONTROLE DA MOTO</div>
+  <div class="top-row"><div><h1>🔧 Manutenção</h1><p>Peças, serviços e próximas trocas</p></div></div>
+  <nav class="nav">
+    <a href="index.html">🏍️ Abastecimento</a>
+    <a href="despesas.html">💰 Despesas</a>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="historico.html">📋 Histórico</a>
+  </nav>
+</header>
+<main>
+  <section id="status" class="status" hidden></section>
+  <section class="metrics" id="metrics"></section>
+  <section class="card">
+    <div class="section-head"><div><span class="ey dark">REGISTRO</span><h2 id="formTitle">Nova manutenção</h2></div></div>
+    <form id="maintenanceForm" class="form" novalidate>
+      <div class="grid two">
+        <label>Data<input name="data_manutencao" type="date" required></label>
+        <label>Quilometragem atual (km)<input name="quilometragem" type="number" inputmode="numeric" min="0" step="1" required></label>
+      </div>
+      <label>Peça ou serviço<input name="peca_servico" type="text" maxlength="160" required placeholder="Ex.: troca de óleo"></label>
+      <div class="grid two">
+        <label>Preço (R$)<input name="preco" type="number" inputmode="decimal" min="0" step="0.01" required></label>
+        <label>Próxima troca (km)<input name="proxima_troca_km" type="number" inputmode="numeric" min="0" step="1" placeholder="Opcional"></label>
+      </div>
+      <label>Loja / oficina<input name="loja" type="text" maxlength="160"></label>
+      <label>Telefone da loja<input name="telefone_loja" type="tel" inputmode="tel" maxlength="40"></label>
+      <label>Observações<textarea name="observacoes" rows="3" maxlength="1000" placeholder="Detalhes adicionais (opcional)"></textarea></label>
+      <div class="form-actions">
+        <button id="saveBtn" class="btn primary" type="submit">💾 Salvar manutenção</button>
+        <button id="cancelBtn" class="btn secondary" type="button" hidden>Cancelar</button>
+      </div>
+    </form>
+  </section>
+  <section>
+    <div class="section-head list-head"><h2>Histórico de manutenção</h2><span id="countLabel"></span></div>
+    <div id="maintenanceList"></div>
+  </section>
+</main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+  const API='https://br-noisy-resonance-b594p7s8-motoapi.compute.c-7.us-east-2.aws.neon.tech';
+  const form=document.getElementById('maintenanceForm');
+  const list=document.getElementById('maintenanceList');
+  const status=document.getElementById('status');
+  const metrics=document.getElementById('metrics');
+  const saveBtn=document.getElementById('saveBtn');
+  const cancelBtn=document.getElementById('cancelBtn');
+  const countLabel=document.getElementById('countLabel');
+  const toast=document.getElementById('toast');
+  let records=[];
+  let editingId=null;
+  const field=n=>form.elements[n];
+  const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+  const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const num=v=>Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+  const dateBR=v=>{if(!v)return '—';const p=String(v).slice(0,10).split('-');return p.length===3?p.reverse().join('/'):String(v)};
+  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function message(msg,type='error'){status.textContent=msg;status.className='status '+type;status.hidden=false}
+  function hideMessage(){status.hidden=true}
+  function toastMsg(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(toastMsg.t);toastMsg.t=setTimeout(()=>toast.classList.remove('show'),2600)}
+  function normalize(x){return {id:x.id??x.manutencao_id??x.uuid,date:x.data_manutencao??x.data??x.date,km:x.quilometragem??x.km_atual??x.km,service:x.peca_servico??x.peca??x.servico??x.descricao,price:x.preco??x.valor??x.preco_servico,shop:x.loja??x.oficina,phone:x.telefone_loja??x.telefone, next:x.proxima_troca_km??x.km_proxima_troca,notes:x.observacoes??x.notes??''}}
+  async function api(path,options={}){
+    const match=path.match(/^\/manutencoes\/([^/?]+)$/);
+    const endpoint=match?'/manutencoes?id=eq.'+encodeURIComponent(decodeURIComponent(match[1])):path;
+    const headers={...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})};
+    const response=await fetch(API+endpoint,{...options,headers});
+    const body=await response.text();let data;try{data=body?JSON.parse(body):null}catch{data=body}
+    if(!response.ok)throw new Error((data&&data.error)||data?.message||('HTTP '+response.status));
+    return data;
+  }
+  function resetForm(){
+    editingId=null;form.reset();field('data_manutencao').value=today();
+    document.getElementById('formTitle').textContent='Nova manutenção';
+    saveBtn.textContent='💾 Salvar manutenção';cancelBtn.hidden=true;
+    if(records.length){const last=[...records].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];field('quilometragem').value=last.km??''}
+  }
+  function render(){
+    const sorted=[...records].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.km||0)-Number(a.km||0));
+    countLabel.textContent=sorted.length+' registro'+(sorted.length===1?'':'s');
+    list.innerHTML=sorted.length?sorted.map(r=>'<article class="maintenance-item"><div class="maintenance-main"><div><div class="maintenance-title">'+esc(r.service||'Manutenção')+'</div><div class="maintenance-meta">'+dateBR(r.date)+' · '+num(r.km)+' km'+(r.shop?' · '+esc(r.shop):'')+(r.phone?' · '+esc(r.phone):'')+'</div>'+(r.next!==null&&r.next!==undefined&&r.next!==''?'<div class="next-due">Próxima troca: '+num(r.next)+' km</div>':'')+(r.notes?'<div class="maintenance-meta">'+esc(r.notes)+'</div>':'')+'</div><div class="maintenance-price">'+money(r.price)+'</div></div><div class="maintenance-actions"><button class="btn edit" data-edit="'+esc(r.id)+'">✏️ Editar</button><button class="btn danger" data-delete="'+esc(r.id)+'">🗑️ Excluir</button></div></article>').join(''):'<div class="empty">Nenhuma manutenção registrada.</div>';
+    const total=records.reduce((s,r)=>s+Number(r.price||0),0);
+    const lastKm=records.length?Math.max(...records.map(r=>Number(r.km||0))):0;
+    metrics.innerHTML='<div class="metric"><div class="label">REGISTROS</div><div class="value">'+records.length+'</div></div><div class="metric"><div class="label">TOTAL GASTO</div><div class="value">'+money(total)+'</div></div><div class="metric"><div class="label">KM MAIS RECENTE</div><div class="value">'+num(lastKm)+' km</div></div><div class="metric"><div class="label">PRÓXIMAS TROCAS</div><div class="value">'+records.filter(r=>r.next!==null&&r.next!==undefined&&r.next!=='').length+'</div></div>';
+  }
+  async function load(){
+    hideMessage();
+    try{const data=await api('/manutencoes');records=(Array.isArray(data)?data:(data?.data||data?.manutencoes||[])).map(normalize);render();resetForm()}
+    catch(e){records=[];render();field('data_manutencao').value=today();message('Não foi possível carregar a manutenção pela API: '+e.message+'. Verifique se a rota /manutencoes está disponível no backend.')}
+  }
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const data={data_manutencao:field('data_manutencao').value,quilometragem:Number(field('quilometragem').value),peca_servico:field('peca_servico').value.trim(),preco:Number(field('preco').value),proxima_troca_km:field('proxima_troca_km').value===''?null:Number(field('proxima_troca_km').value),loja:field('loja').value.trim(),telefone_loja:field('telefone_loja').value.trim(),observacoes:field('observacoes').value.trim()};
+    if(!data.data_manutencao||field('quilometragem').value===''||!data.peca_servico||field('preco').value===''){toastMsg('Preencha os campos obrigatórios.');return}
+    saveBtn.disabled=true;
+    try{if(editingId!==null)await api('/manutencoes/'+encodeURIComponent(editingId),{method:'PATCH',body:JSON.stringify(data)});else await api('/manutencoes',{method:'POST',body:JSON.stringify(data)});toastMsg(editingId!==null?'Manutenção atualizada.':'Manutenção salva.');await load()}
+    catch(e){message('Erro ao salvar manutenção: '+e.message+'. A rota /manutencoes precisa estar implementada na API para persistir os dados.')}
+    finally{saveBtn.disabled=false}
+  });
+  cancelBtn.addEventListener('click',resetForm);
+  list.addEventListener('click',async e=>{
+    const edit=e.target.closest('[data-edit]'),del=e.target.closest('[data-delete]');
+    if(edit){const r=records.find(x=>String(x.id)===String(edit.dataset.edit));if(!r)return;editingId=r.id;document.getElementById('formTitle').textContent='Editar manutenção';saveBtn.textContent='💾 Atualizar manutenção';cancelBtn.hidden=false;field('data_manutencao').value=String(r.date||'').slice(0,10);field('quilometragem').value=r.km??'';field('peca_servico').value=r.service??'';field('preco').value=r.price??'';field('proxima_troca_km').value=r.next??'';field('loja').value=r.shop??'';field('telefone_loja').value=r.phone??'';field('observacoes').value=r.notes??'';scrollTo({top:0,behavior:'smooth'});return}
+    if(del){const id=del.dataset.delete;if(!confirm('Excluir este registro de manutenção?'))return;try{await api('/manutencoes/'+encodeURIComponent(id),{method:'DELETE'});toastMsg('Manutenção excluída.');await load()}catch(e){message('Erro ao excluir manutenção: '+e.message)}}
+  });
+  field('data_manutencao').value=today();
+  load();
+})();
+</script>
+</body>
+</html>
