@@ -158,7 +158,7 @@
     else list.innerHTML=sorted.map((r,i)=>{
       const prev=sorted[i+1];
       const kmL=prev && Number(r.km)>Number(prev.km) && Number(r.liters)>0 ? ((Number(r.km)-Number(prev.km))/Number(r.liters)) : null;
-      return '<article class="fuel-item"><div class="fuel-main"><div><div class="fuel-date">'+dateBR(r.date)+'</div><div class="fuel-meta">'+num(r.km,0)+' km · '+num(r.liters,3)+' L · '+num(r.price,3)+' / L<br>'+escapeHtml(r.fuel||'')+(r.station?' · '+escapeHtml(r.station):'')+(kmL?' · '+num(kmL,2)+' km/L':'')+'</div></div><div class="fuel-total">'+money(r.total)+'</div></div><div class="fuel-actions"><button class="btn edit" data-edit="'+escapeAttr(r.id)+'">✏️ Editar</button><button class="btn danger" data-delete="'+escapeAttr(r.id)+'">🗑️ Excluir</button></div></article>';
+      return '<article class="fuel-item"><div class="fuel-main"><div><div class="fuel-date">'+dateBR(r.date)+'</div><div class="fuel-meta">'+num(r.km,0)+' km · '+num(r.liters,3)+' L · '+num(r.price,2)+' / L<br>'+escapeHtml(r.fuel||'')+(r.station?' · '+escapeHtml(r.station):'')+(kmL?' · '+num(kmL,2)+' km/L':'')+'</div></div><div class="fuel-total">'+money(r.total)+'</div></div><div class="fuel-actions"><button class="btn edit" data-edit="'+escapeAttr(r.id)+'">✏️ Editar</button><button class="btn danger" data-delete="'+escapeAttr(r.id)+'">🗑️ Excluir</button></div></article>';
     }).join('');
     const total=records.reduce((s,r)=>s+Number(r.total||0),0);
     const liters=records.reduce((s,r)=>s+Number(r.liters||0),0);
