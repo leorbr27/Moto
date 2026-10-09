@@ -31,6 +31,14 @@ Rotas:
 - `POST /abastecimentos`
 - `PATCH /abastecimentos?id=eq.<uuid>`
 - `DELETE /abastecimentos?id=eq.<uuid>`
+- `GET /despesas`
+- `POST /despesas`
+- `PATCH /despesas?id=eq.<uuid>`
+- `DELETE /despesas?id=eq.<uuid>`
+- `GET /manutencoes`
+- `POST /manutencoes`
+- `PATCH /manutencoes?id=eq.<uuid>`
+- `DELETE /manutencoes?id=eq.<uuid>`
 
 A origem permitida é `https://leorbr27.github.io`.
 
@@ -109,3 +117,16 @@ Após a migração para a API intermediária, validar:
 14. ausência de credenciais privadas no frontend.
 
 Última atualização documentada: 08/10/2026.
+
+
+## Despesas
+
+A página `despesas.html` registra despesas gerais da motocicleta com data, categoria, descrição, valor, quilometragem opcional e observações. Inclui edição, exclusão, total acumulado, total do ano atual e resumo por quantidade de categorias. Categorias: IPVA, multas, licenciamento, seguro, documentação, estacionamento, acessórios, lavagem, pedágio e outros. Os registros são persistidos no Neon, sem login e sem uso de localStorage como banco.
+
+## Dashboard
+
+A página `dashboard.html` reúne os dados de abastecimentos, manutenção e despesas gerais, com seleção de mês, total de gastos no período, número de abastecimentos, litros, distância registrada, divisão de custos por tipo e despesas gerais por categoria. O dashboard consulta os dados na API Neon.
+
+As tabelas `public.moto_expense` e `public.moto_maintenance` são criadas pela API quando necessário, sem alterar os registros existentes de abastecimento.
+
+Últimas alterações: implementação das páginas Despesas e Dashboard e inclusão das rotas de API para despesas e manutenção (09/10/2026).
