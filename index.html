@@ -131,7 +131,13 @@
     };
   }
   async function api(path, options={}){
-    const r=await fetch(API+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
+    // A API Neon recebe PATCH/DELETE em /abastecimentos?id=eq.UUID,
+    // não em /abastecimentos/UUID.
+    const itemMatch=path.match(/^\/abastecimentos\/([^/?]+)$/);
+    const endpoint=itemMatch
+      ? '/abastecimentos?id=eq.'+encodeURIComponent(decodeURIComponent(itemMatch[1]))
+      : path;
+    const r=await fetch(API+endpoint,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
     const text=await r.text();
     let data; try{data=text?JSON.parse(text):null}catch{data=text}
     if(!r.ok) throw new Error((data&&data.error)||data?.message||('HTTP '+r.status));
