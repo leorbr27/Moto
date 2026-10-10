@@ -73,10 +73,10 @@
   function message(msg,type='error'){status.textContent=msg;status.className='status '+type;status.hidden=false}
   function hideMessage(){status.hidden=true}
   function toastMsg(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(toastMsg.t);toastMsg.t=setTimeout(()=>toast.classList.remove('show'),2600)}
-  function normalize(x){return {id:x.id??x.manutencao_id??x.uuid,date:x.data_manutencao??x.data??x.date,km:x.quilometragem??x.km_atual??x.km,service:x.peca_servico??x.peca??x.servico??x.descricao,price:x.preco??x.valor??x.preco_servico,shop:x.loja??x.oficina,phone:x.telefone_loja??x.telefone, next:x.proxima_troca_km??x.km_proxima_troca,notes:x.observacoes??x.notes??''}}
+  function normalize(x){return {id:x.id??x.manutencao_id??x.uuid,date:x.entry_date??x.data_manutencao??x.data??x.date,km:x.km??x.quilometragem??x.km_atual,service:x.item??x.peca_servico??x.peca??x.servico??x.descricao,price:x.price??x.preco??x.valor??x.preco_servico,shop:x.store??x.loja??x.oficina,phone:x.phone??x.telefone_loja??x.telefone, next:x.next_km??x.proxima_troca_km??x.km_proxima_troca,notes:x.notes??x.observacoes??''}}
   async function api(path,options={}){
-    const match=path.match(/^\/manutencoes\/([^/?]+)$/);
-    const endpoint=match?'/manutencoes?id=eq.'+encodeURIComponent(decodeURIComponent(match[1])):path;
+    const match=path.match(/^\/moto_maintenance\/([^/?]+)$/);
+    const endpoint=match?'/moto_maintenance?id=eq.'+encodeURIComponent(decodeURIComponent(match[1])):path;
     const headers={...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})};
     const response=await fetch(API+endpoint,{...options,headers});
     const body=await response.text();let data;try{data=body?JSON.parse(body):null}catch{data=body}
@@ -99,15 +99,15 @@
   }
   async function load(){
     hideMessage();
-    try{const data=await api('/manutencoes');records=(Array.isArray(data)?data:(data?.data||data?.manutencoes||[])).map(normalize);render();resetForm()}
+    try{const data=await api('/moto_maintenance');records=(Array.isArray(data)?data:(data?.data||data?.manutencoes||[])).map(normalize);render();resetForm()}
     catch(e){records=[];render();field('data_manutencao').value=today();message('Não foi possível carregar a manutenção pela API: '+e.message+'. Verifique se a rota /manutencoes está disponível no backend.')}
   }
   form.addEventListener('submit',async e=>{
     e.preventDefault();
-    const data={data_manutencao:field('data_manutencao').value,quilometragem:Number(field('quilometragem').value),peca_servico:field('peca_servico').value.trim(),preco:Number(field('preco').value),proxima_troca_km:field('proxima_troca_km').value===''?null:Number(field('proxima_troca_km').value),loja:field('loja').value.trim(),telefone_loja:field('telefone_loja').value.trim(),observacoes:field('observacoes').value.trim()};
+    const data={entry_date:field('data_manutencao').value,km:Number(field('quilometragem').value),item:field('peca_servico').value.trim(),price:Number(field('preco').value),next_km:field('proxima_troca_km').value===''?null:Number(field('proxima_troca_km').value),store:field('loja').value.trim(),phone:field('telefone_loja').value.trim(),notes:field('observacoes').value.trim()};
     if(!data.data_manutencao||field('quilometragem').value===''||!data.peca_servico||field('preco').value===''){toastMsg('Preencha os campos obrigatórios.');return}
     saveBtn.disabled=true;
-    try{if(editingId!==null)await api('/manutencoes/'+encodeURIComponent(editingId),{method:'PATCH',body:JSON.stringify(data)});else await api('/manutencoes',{method:'POST',body:JSON.stringify(data)});toastMsg(editingId!==null?'Manutenção atualizada.':'Manutenção salva.');await load()}
+    try{if(editingId!==null)await api('/moto_maintenance/'+encodeURIComponent(editingId),{method:'PATCH',body:JSON.stringify(data)});else await api('/moto_maintenance',{method:'POST',body:JSON.stringify(data)});toastMsg(editingId!==null?'Manutenção atualizada.':'Manutenção salva.');await load()}
     catch(e){message('Erro ao salvar manutenção: '+e.message+'. A rota /manutencoes precisa estar implementada na API para persistir os dados.')}
     finally{saveBtn.disabled=false}
   });
@@ -115,7 +115,7 @@
   list.addEventListener('click',async e=>{
     const edit=e.target.closest('[data-edit]'),del=e.target.closest('[data-delete]');
     if(edit){const r=records.find(x=>String(x.id)===String(edit.dataset.edit));if(!r)return;editingId=r.id;document.getElementById('formTitle').textContent='Editar manutenção';saveBtn.textContent='💾 Atualizar manutenção';cancelBtn.hidden=false;field('data_manutencao').value=String(r.date||'').slice(0,10);field('quilometragem').value=r.km??'';field('peca_servico').value=r.service??'';field('preco').value=r.price??'';field('proxima_troca_km').value=r.next??'';field('loja').value=r.shop??'';field('telefone_loja').value=r.phone??'';field('observacoes').value=r.notes??'';scrollTo({top:0,behavior:'smooth'});return}
-    if(del){const id=del.dataset.delete;if(!confirm('Excluir este registro de manutenção?'))return;try{await api('/manutencoes/'+encodeURIComponent(id),{method:'DELETE'});toastMsg('Manutenção excluída.');await load()}catch(e){message('Erro ao excluir manutenção: '+e.message)}}
+    if(del){const id=del.dataset.delete;if(!confirm('Excluir este registro de manutenção?'))return;try{await api('/moto_maintenance/'+encodeURIComponent(id),{method:'DELETE'});toastMsg('Manutenção excluída.');await load()}catch(e){message('Erro ao excluir manutenção: '+e.message)}}
   });
   field('data_manutencao').value=today();
   load();
