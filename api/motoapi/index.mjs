@@ -11,7 +11,7 @@ function idFrom(u){const x=u.searchParams.get('id');return x&&/^eq\.[0-9a-f-]{36
 async function ensureTables(q){
   await q`CREATE TABLE IF NOT EXISTS public.moto_expense (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    data_despesa date NOT NULL,
+     date NOT NULL,
     categoria text NOT NULL,
     descricao text NOT NULL,
     valor numeric(12,2) NOT NULL CHECK (valor >= 0),
@@ -20,7 +20,7 @@ async function ensureTables(q){
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
   )`;
-  await q`CREATE INDEX IF NOT EXISTS moto_expense_date_idx ON public.moto_expense (data_despesa DESC)`;
+  await q`CREATE INDEX IF NOT EXISTS moto_expense_date_idx ON public.moto_expense ( DESC)`
   await q`CREATE TABLE IF NOT EXISTS public.moto_maintenance (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     data_manutencao date NOT NULL,
@@ -52,13 +52,13 @@ export default {async fetch(request){
    await ensureTables(q);
    const expense=path==='/despesas', table=expense?'moto_expense':'moto_maintenance';
    if(request.method==='GET')return json(expense
-    ?await q`SELECT * FROM public.moto_expense ORDER BY data_despesa DESC,created_at DESC`
+    ?await q`SELECT * FROM public.moto_expense ORDER BY DESC,created_at DESC`
     :await q`SELECT * FROM public.moto_maintenance ORDER BY data_manutencao DESC,created_at DESC`);
    if(request.method==='POST'){
     const p=await request.json();
     if(expense){
-     for(const k of ['data_despesa','categoria','descricao','valor'])if(p[k]===undefined||p[k]===null||p[k]==='')return err('Campo obrigatório: '+k+'.');
-     return json(await q`INSERT INTO public.moto_expense(data_despesa,categoria,descricao,valor,quilometragem,observacoes) VALUES(${p.data_despesa},${p.categoria},${p.descricao},${Number(p.valor)},${p.quilometragem===''||p.quilometragem==null?null:Number(p.quilometragem)},${p.observacoes??null}) RETURNING *`,201);
+     for(const k of ['','categoria','descricao','valor'])if(p[k]===undefined||p[k]===null||p[k]==='')return err('Campo obrigatório: '+k+'.');
+     return json(await q`INSERT INTO public.moto_expense(,categoria,descricao,valor,quilometragem,observacoes) VALUES(${p.},${p.categoria},${p.descricao},${Number(p.valor)},${p.quilometragem===''||p.quilometragem==null?null:Number(p.quilometragem)},${p.observacoes??null}) RETURNING *`,201);
     }
     for(const k of ['data_manutencao','quilometragem','peca_servico','preco'])if(p[k]===undefined||p[k]===null||p[k]==='')return err('Campo obrigatório: '+k+'.');
     return json(await q`INSERT INTO public.moto_maintenance(data_manutencao,quilometragem,peca_servico,preco,proxima_troca_km,loja,telefone_loja,observacoes) VALUES(${p.data_manutencao},${Number(p.quilometragem)},${p.peca_servico},${Number(p.preco)},${p.proxima_troca_km===''||p.proxima_troca_km==null?null:Number(p.proxima_troca_km)},${p.loja??null},${p.telefone_loja??null},${p.observacoes??null}) RETURNING *`,201);
@@ -67,7 +67,7 @@ export default {async fetch(request){
    if(request.method==='PATCH'){
     const p=await request.json();
     const r=expense
-     ?await q`UPDATE public.moto_expense SET data_despesa=${p.data_despesa},categoria=${p.categoria},descricao=${p.descricao},valor=${Number(p.valor)},quilometragem=${p.quilometragem===''||p.quilometragem==null?null:Number(p.quilometragem)},observacoes=${p.observacoes??null},updated_at=now() WHERE id=${id} RETURNING *`
+     ?await q`UPDATE public.moto_expense SET =${p.},categoria=${p.categoria},descricao=${p.descricao},valor=${Number(p.valor)},quilometragem=${p.quilometragem===''||p.quilometragem==null?null:Number(p.quilometragem)},observacoes=${p.observacoes??null},updated_at=now() WHERE id=${id} RETURNING *`
      :await q`UPDATE public.moto_maintenance SET data_manutencao=${p.data_manutencao},quilometragem=${Number(p.quilometragem)},peca_servico=${p.peca_servico},preco=${Number(p.preco)},proxima_troca_km=${p.proxima_troca_km===''||p.proxima_troca_km==null?null:Number(p.proxima_troca_km)},loja=${p.loja??null},telefone_loja=${p.telefone_loja??null},observacoes=${p.observacoes??null},updated_at=now() WHERE id=${id} RETURNING *`;
     if(!r.length)return err('Registro não encontrado.',404);return json(r);
    }
