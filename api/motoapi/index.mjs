@@ -39,7 +39,7 @@ export default {async fetch(request){
  try{
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors()});
   const u=new URL(request.url), path=u.pathname.replace(/\/$/,'')||'/';
-  if(path==='/')return json({ok:true,service:'Moto API',routes:['/abastecimentos','/despesas','/manutencoes']});
+  if(path==='/')return json({ok:true,service:'Moto API',routes:['/abastecimentos','/despesas','/moto_maintenance']});
   const q=await sql();
   if(path==='/abastecimentos'){
    if(request.method==='GET')return json(await q`SELECT id,data_abastecimento,quilometragem,litros,valor_total,preco_litro,combustivel,posto,observacoes,created_at,updated_at FROM public.abastecimentos ORDER BY data_abastecimento DESC,created_at DESC`);
@@ -48,7 +48,7 @@ export default {async fetch(request){
    if(request.method==='PATCH'){const p=await request.json();const r=await q`UPDATE public.abastecimentos SET data_abastecimento=${p.data_abastecimento},quilometragem=${Number(p.quilometragem)},litros=${Number(p.litros)},valor_total=${Number(p.valor_total)},preco_litro=${Number(p.preco_litro)},combustivel=${p.combustivel},posto=${p.posto??null},observacoes=${p.observacoes??null},updated_at=now() WHERE id=${id} RETURNING *`;if(!r.length)return err('Registro não encontrado.',404);return json(r)}
    if(request.method==='DELETE'){const r=await q`DELETE FROM public.abastecimentos WHERE id=${id} RETURNING id`;if(!r.length)return err('Registro não encontrado.',404);return new Response(null,{status:204,headers:cors()})}
   }
-  if(path==='/despesas'||path==='/manutencoes'){
+  if(path==='/despesas'||path==='/moto_manitenance'){
    await ensureTables(q);
    const expense=path==='/despesas', table=expense?'moto_expense':'moto_maintenance';
    if(request.method==='GET')return json(expense
