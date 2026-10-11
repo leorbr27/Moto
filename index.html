@@ -8,6 +8,11 @@
 <link rel="stylesheet" href="style.css">
 <style>
 .nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.nav a{color:#e5e7eb;text-decoration:none;font-size:12px;font-weight:750;background:#ffffff12;border:1px solid #ffffff24;border-radius:10px;padding:9px 10px}
+
+.fuel-side{display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-start;gap:10px}
+.fuel-actions{display:flex;gap:7px;margin-top:0}
+.fuel-actions .btn{min-height:36px;padding:7px 10px;font-size:12px}
+@media(max-width:560px){.fuel-side{gap:8px}.fuel-actions{flex-direction:column}.fuel-actions .btn{padding:6px 8px;min-height:32px}}
 </style>
 </head>
 <body>
@@ -167,7 +172,7 @@
     else list.innerHTML=sorted.map((r,i)=>{
       const prev=sorted[i+1];
       const kmL=prev && Number(r.km)>Number(prev.km) && Number(r.liters)>0 ? ((Number(r.km)-Number(prev.km))/Number(r.liters)) : null;
-      return '<article class="fuel-item"><div class="fuel-main"><div><div class="fuel-date">'+dateBR(r.date)+'</div><div class="fuel-meta">'+num(r.km,0)+' km · '+num(r.liters,3)+' L · '+num(r.price,2)+' / L<br>'+escapeHtml(r.fuel||'')+(r.station?' · '+escapeHtml(r.station):'')+(kmL?' · '+num(kmL,2)+' km/L':'')+'</div></div><div class="fuel-total">'+money(r.total)+'</div></div><div class="fuel-actions"><button class="btn edit" data-edit="'+escapeAttr(r.id)+'">✏️ Editar</button><button class="btn danger" data-delete="'+escapeAttr(r.id)+'">🗑️ Excluir</button></div></article>';
+      return '<article class="fuel-item"><div class="fuel-main"><div class="fuel-details"><div class="fuel-date">'+escapeHtml(r.station||'Posto não informado')+'</div><div class="fuel-meta">'+num(r.km,0)+' km · '+num(r.liters,3)+' L · '+num(r.price,2)+' / L</div><div class="fuel-meta">'+escapeHtml(r.fuel||'')+(kmL?' · '+num(kmL,2)+' km/L':'')+'</div></div><div class="fuel-side"><div class="fuel-total">'+money(r.total)+'</div><div class="fuel-actions"><button class="btn edit" data-edit="'+escapeAttr(r.id)+'">✏️ Editar</button><button class="btn danger" data-delete="'+escapeAttr(r.id)+'">🗑️ Excluir</button></div></div></div></article>';
     }).join('');
     const total=records.reduce((s,r)=>s+Number(r.total||0),0);
     const liters=records.reduce((s,r)=>s+Number(r.liters||0),0);
