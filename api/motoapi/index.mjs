@@ -23,14 +23,14 @@ export default {async fetch(request){
    if(request.method==='DELETE'){const r=await q`DELETE FROM public.abastecimentos WHERE id=${id} RETURNING id`;if(!r.length)return err('Registro não encontrado.',404);return new Response(null,{status:204,headers:cors()})}
   }
   if(path==='/despesas'){
-   if(request.method==='GET')return json(await q`SELECT id,entry_date AS data_despesa,categoria,descricao,valor,quilometragem,observacoes,created_at,updated_at FROM public.moto_expense ORDER BY entry_date DESC,created_at DESC`);
+   if(request.method==='GET')return json(await q`SELECT id,data_despesa,categoria,descricao,valor,quilometragem,observacoes,created_at,updated_at FROM public.moto_expense ORDER BY data_despesa DESC,created_at DESC`);
    if(request.method==='POST'){
     const p=await request.json();for(const k of ['data_despesa','categoria','descricao','valor'])if(p[k]===undefined||p[k]===null||p[k]==='')return err('Campo obrigatório: '+k+'.');
-    return json(await q`INSERT INTO public.moto_expense(entry_date,categoria,descricao,valor,quilometragem,observacoes) VALUES(${p.data_despesa},${p.categoria},${p.descricao},${Number(p.valor)},${nullableNumber(p.quilometragem)},${p.observacoes??null}) RETURNING id,entry_date AS data_despesa,categoria,descricao,valor,quilometragem,observacoes,created_at,updated_at`,201);
+    return json(await q`INSERT INTO public.moto_expense(data_despesa,categoria,descricao,valor,quilometragem,observacoes) VALUES(${p.data_despesa},${p.categoria},${p.descricao},${Number(p.valor)},${nullableNumber(p.quilometragem)},${p.observacoes??null}) RETURNING id,data_despesa,categoria,descricao,valor,quilometragem,observacoes,created_at,updated_at`,201);
    }
    const id=idFrom(u);if(!id)return err('ID inválido ou ausente.');
    if(request.method==='PATCH'){
-    const p=await request.json();const r=await q`UPDATE public.moto_expense SET entry_date=${p.data_despesa},categoria=${p.categoria},descricao=${p.descricao},valor=${Number(p.valor)},quilometragem=${nullableNumber(p.quilometragem)},observacoes=${p.observacoes??null},updated_at=now() WHERE id=${id} RETURNING id,entry_date AS data_despesa,categoria,descricao,valor,quilometragem,observacoes,created_at,updated_at`;
+    const p=await request.json();const r=await q`UPDATE public.moto_expense SET data_despesa=${p.data_despesa},categoria=${p.categoria},descricao=${p.descricao},valor=${Number(p.valor)},quilometragem=${nullableNumber(p.quilometragem)},observacoes=${p.observacoes??null},updated_at=now() WHERE id=${id} RETURNING id,data_despesa,categoria,descricao,valor,quilometragem,observacoes,created_at,updated_at`;
     if(!r.length)return err('Registro não encontrado.',404);return json(r);
    }
    if(request.method==='DELETE'){const r=await q`DELETE FROM public.moto_expense WHERE id=${id} RETURNING id`;if(!r.length)return err('Registro não encontrado.',404);return new Response(null,{status:204,headers:cors()})}
