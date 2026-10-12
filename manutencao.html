@@ -28,7 +28,7 @@
     <div class="section-head"><div><span class="ey dark">REGISTRO</span><h2 id="formTitle">Nova manutenção</h2></div></div>
     <form id="maintenanceForm" class="form" novalidate>
       <div class="grid two">
-        <label>Data<input name="data_manutencao" type="date" required></label>
+        <label>Data<input name="data_manutencao" type="date"></label>
         <label>Quilometragem atual (km)<input name="quilometragem" type="number" inputmode="numeric" min="0" step="1" required></label>
       </div>
       <label>Peça ou serviço<input name="peca_servico" type="text" maxlength="160" required placeholder="Ex.: troca de óleo"></label>
@@ -105,7 +105,7 @@
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     const data={entry_date:field('data_manutencao').value,km:Number(field('quilometragem').value),item:field('peca_servico').value.trim(),price:Number(field('preco').value),next_km:field('proxima_troca_km').value===''?null:Number(field('proxima_troca_km').value),store:field('loja').value.trim(),phone:field('telefone_loja').value.trim(),notes:field('observacoes').value.trim()};
-    if(!data.data_manutencao||field('quilometragem').value===''||!data.peca_servico||field('preco').value===''){toastMsg('Preencha os campos obrigatórios.');return}
+    if(field('quilometragem').value===''||!data.item||field('preco').value===''){toastMsg('Preencha os campos obrigatórios.');return}
     saveBtn.disabled=true;
     try{if(editingId!==null)await api('/manutencoes/'+encodeURIComponent(editingId),{method:'PATCH',body:JSON.stringify(data)});else await api('/manutencoes',{method:'POST',body:JSON.stringify(data)});toastMsg(editingId!==null?'Manutenção atualizada.':'Manutenção salva.');await load()}
     catch(e){message('Erro ao salvar manutenção: '+e.message+'. A rota /manutencoes precisa estar implementada na API para persistir os dados.')}
