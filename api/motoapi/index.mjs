@@ -1,10 +1,9 @@
-const ALLOW_ORIGIN='https://leorbr27.github.io';
 let sqlPromise;
 async function sql(){
   if(!sqlPromise) sqlPromise=fetch('https://cdn.jsdelivr.net/npm/@neondatabase/serverless@1.0.2/index.mjs').then(r=>{if(!r.ok)throw new Error('Falha ao carregar driver Neon: '+r.status);return r.text()}).then(s=>import('data:text/javascript;base64,'+Buffer.from(s).toString('base64'))).then(m=>m.neon(process.env.DATABASE_URL));
   return sqlPromise;
 }
-function cors(){return {'Access-Control-Allow-Origin':ALLOW_ORIGIN,'Access-Control-Allow-Methods':'GET,POST,PATCH,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type, Prefer','Access-Control-Max-Age':'86400'}}
+function cors(){return {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,PATCH,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type, Prefer','Access-Control-Max-Age':'86400'}}
 function json(d,s=200){return new Response(JSON.stringify(d),{status:s,headers:{'Content-Type':'application/json; charset=utf-8',...cors()}})}
 function err(m,s=400){return json({message:m},s)}
 function idFrom(u){const x=u.searchParams.get('id');return x&&/^eq\.[0-9a-f-]{36}$/i.test(x)?x.slice(3):null}
