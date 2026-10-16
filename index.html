@@ -180,7 +180,16 @@
     const liters=records.reduce((s,r)=>s+Number(r.liters||0),0);
     const km=records.length>1 ? Math.max(...records.map(r=>Number(r.km||0)))-Math.min(...records.map(r=>Number(r.km||0))) : 0;
     metrics.innerHTML='<div class="metric"><div class="label">ABASTECIMENTOS</div><div class="value">'+records.length+'</div></div><div class="metric"><div class="label">TOTAL GASTO</div><div class="value">'+money(total)+'</div></div><div class="metric"><div class="label">LITROS</div><div class="value">'+num(liters,2)+' L</div></div><div class="metric"><div class="label">DISTÂNCIA</div><div class="value">'+num(km,0)+' km</div></div>';
-    updatedAt.textContent=new Date().toLocaleString('pt-BR');
+    loadUpdatedAt();
+  }
+  async function loadUpdatedAt(){
+    try{
+      const response=await fetch('https://api.github.com/repos/leorbr27/Moto/commits?per_page=1');
+      if(!response.ok) throw new Error('GitHub API '+response.status);
+      const commits=await response.json();
+      const date=commits[0]?.commit?.committer?.date || commits[0]?.commit?.author?.date;
+      if(date) updatedAt.textContent=new Date(date).toLocaleString('pt-BR');
+    }catch(e){ updatedAt.textContent='Indisponível'; }
   }
   function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function escapeAttr(v){return escapeHtml(v).replace(/"/g,'&quot;');}
